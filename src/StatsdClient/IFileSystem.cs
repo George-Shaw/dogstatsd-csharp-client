@@ -1,6 +1,4 @@
-using System;
 using System.IO;
-using Mono.Unix.Native;
 
 namespace StatsdClient
 {
@@ -81,15 +79,14 @@ namespace StatsdClient
         /// <returns>True if the file stat was successful, false otherwise</returns>
         public bool TryStat(string path, out ulong inode)
         {
-            if (Environment.OSVersion.Platform == PlatformID.Unix &&
-                Syscall.stat(path, out var stat) > 0)
-            {
-                inode = stat.st_ino;
-                return true;
-            }
-
+#if !NETFRAMEWORK
+            // Inode lookup is only supported on Linux; TryGetInode performs the platform check.
+            return NativeMethods.TryGetInode(path, out inode);
+#else
+            // Inode lookup is unsupported on .NET Framework, which always runs on Windows.
             inode = 0;
             return false;
+#endif
         }
     }
 }
